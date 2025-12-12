@@ -1,4 +1,4 @@
-from flask import Flask, render_template, redirect, url_for, flash
+from flask import Flask, render_template, request, redirect, url_for, flash
 from flask_sqlalchemy import SQLAlchemy
 
 from datetime import datetime
@@ -9,11 +9,12 @@ app.config['SECRET_KEY'] = 'dev'
 basedir = os.path.abspath(os.path.dirname(__file__))
 db_path = os.path.join(basedir, 'database')
 os.makedirs(db_path, exist_ok=True)
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(db_path, 'events.db')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db = SQLAlchemy(app)
 
-class Eventos(db.Model):
+class Evento(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     nome = db.Column(db.String(200), nullable=False)
     idade_minima = db.Column(db.Integer)
@@ -34,11 +35,44 @@ def create_tables():
 
 @app.route("/")
 def index():
-    return render_template("index.html")
+    eventos = Evento.query.order_by(Evento.data).all()
+    return render_template("index.html", eventos=eventos)
 
-@app.route("/cadastrar-evento")
+@app.route("/cadastrar-evento", methods=['GET', 'POST'])
 def cadastrar_evento():
+    if request.method == 'POST':
+        nome = request.form.get('evento')
+        idade = request.form.get('idade')
+        data_str = request.form.get('data')
+        hora_str = request.form.get('hora')
+        cep = request.form.get('cep')
+        uf = request.form.get('uf')
+        cidade = request.form.get('cidade')
+        local = request.form.get('local')
+
+        idade_val = int(idade) if idade else None
+        data_val = datetime.strptime(data_str, "%Y-%m-%d").date() if data_str else None
+        hora_val = datetime.strstime(hora_str, "%H:%M").time() if hora_str else None
+
+
+        evento = Evento(
+            nome=nome,
+            idade_minima=idade_val,
+            data=data_val,
+            hora=hora_val,
+            cep=cep,
+            ur=uf,
+            cidade=cidade,
+            local=local
+        )
+
+        db.session.add(evento)
+        db.session.comit()
+        flash('Evento cadastrado com sucesso.')
+        return redirect(url_for('index'))
+    
     return render_template("cadastrar-evento.html")
 
 if __name__ == "__main__":
+    create_tables()
     app.run(debug=True)
