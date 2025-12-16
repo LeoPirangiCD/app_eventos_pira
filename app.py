@@ -27,9 +27,8 @@ class Evento(db.Model):
 
 def create_tables():
     try:
-        with app.app_content():
+        with app.app_context():
             db.create_all()
-
     except Exception:
         db.create_all()
 
@@ -52,7 +51,7 @@ def cadastrar_evento():
 
         idade_val = int(idade) if idade else None
         data_val = datetime.strptime(data_str, "%Y-%m-%d").date() if data_str else None
-        hora_val = datetime.strstime(hora_str, "%H:%M").time() if hora_str else None
+        hora_val = datetime.strptime(hora_str, "%H:%M").time() if hora_str else None
 
 
         evento = Evento(
@@ -61,13 +60,13 @@ def cadastrar_evento():
             data=data_val,
             hora=hora_val,
             cep=cep,
-            ur=uf,
+            uf=uf,
             cidade=cidade,
             local=local
         )
 
         db.session.add(evento)
-        db.session.comit()
+        db.session.commit()
         flash('Evento cadastrado com sucesso.')
         return redirect(url_for('index'))
     
